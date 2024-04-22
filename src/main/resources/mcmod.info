@@ -1,0 +1,14 @@
+[{
+    "modid": "${modid}",
+    "name": "${modname}",
+    "description": "A mod to send metrics about an ME system to an external server",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "logoFile": "",
+    "url": "",
+    "authorList": [
+                  "stone"
+                  ],
+    "credits": "",
+    "dependencies": []
+}]
