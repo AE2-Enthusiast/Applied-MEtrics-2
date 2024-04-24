@@ -56,9 +56,9 @@ public class TileExposer extends AENetworkTile {
 				GaugeDataPoint datapoint = fluidMap.computeIfAbsent(fluidType, fluid -> {
 					Gauge gauge = gauges.computeIfAbsent("fluid", channel -> {
 						return Gauge.builder().name("AE2_fluid_count").help("The counts of each fluid in the ME system")
-								.labelNames("unlocalized").unit(new Unit("milliBuckets")).register();
+                                                    .labelNames("id", "unlocalized").unit(new Unit("milliBuckets")).register();
 					});
-					return gauge.labelValues(fluidType.getUnlocalizedName());
+					return gauge.labelValues(fluidType.getName(), fluidType.getUnlocalizedName());
 				});
 
 				datapoint.set(stack.getStackSize());
@@ -80,12 +80,13 @@ public class TileExposer extends AENetworkTile {
 				}).computeIfAbsent(meta, m -> {
 					Gauge gauge = gauges.computeIfAbsent("item", channel -> {
 						return Gauge.builder().name("AE2_item_count").help("The counts of each item in the ME system")
-								.labelNames("unlocalized").unit(new Unit("items")).register();
+                                                    .labelNames("modid", "id", "meta", "unlocalized").unit(new Unit("items")).register();
 					});
+                                        ResourceLocation name = itemType.getRegistryName();
 					try {
-						return gauge.labelValues(itemType.getTranslationKey(stack.createItemStack()));
+                                            return gauge.labelValues(name.getNamespace(), name.getPath(), String.valueOf(item.getMeta()), itemType.getTranslationKeyInefficiently(stack.createItemStack()));
 					} catch (Exception e) {
-						return gauge.labelValues(itemType.getTranslationKey());
+                                            return gauge.labelValues(name.getNamespace(), name.getPath(), String.valueOf(item.getMeta(), itemType.getTranslationKey());
 					}
 				});
 
