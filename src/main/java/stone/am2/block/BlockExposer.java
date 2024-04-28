@@ -11,5 +11,4 @@ public class BlockExposer extends AEBaseTileBlock {
 		this.setTranslationKey("appliedmetrics2.exposer");
 		this.setTileEntity(TileExposer.class);
 	}
-
 }

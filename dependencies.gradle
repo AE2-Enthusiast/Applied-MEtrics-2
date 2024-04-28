@@ -39,9 +39,9 @@
  */
 dependencies {
     // non-mod library that's always there
-    shadowImplementation 'io.prometheus:prometheus-metrics-core:1.2.1'
-    shadowImplementation 'io.prometheus:prometheus-metrics-instrumentation-jvm:1.2.1'
-    shadowImplementation 'io.prometheus:prometheus-metrics-exporter-httpserver:1.2.1'
+    //shadowImplementation 'io.prometheus:prometheus-metrics-core:1.2.1'
+    //shadowImplementation 'io.prometheus:prometheus-metrics-instrumentation-jvm:1.2.1'
+    //shadowImplementation 'io.prometheus:prometheus-metrics-exporter-httpserver:1.2.1'
 
     // mods we depend on, and are always there
     implementation rfg.deobf("curse.maven:ae2-extended-life-570458:5147702")
