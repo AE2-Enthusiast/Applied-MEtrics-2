@@ -1,6 +1,11 @@
 package stone.am2;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import io.prometheus.metrics.exporter.httpserver.HTTPServer;
 import io.prometheus.metrics.instrumentation.jvm.JvmMetrics;
@@ -21,66 +26,81 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import stone.am2.block.BlockExposer;
+import stone.am2.block.ProductionExposerBlock;
+import stone.am2.tile.ProductionExposerTile;
 import stone.am2.tile.TileExposer;
 
 @Mod(modid = AM2.MODID, name = AM2.NAME, version = AM2.VERSION, dependencies = "required:appliedenergistics2")
 public class AM2 {
 
-	public static class ServerProxy {
-		@SubscribeEvent
-		public void registerBlocks(RegistryEvent.Register<Block> event) {
-			event.getRegistry().register(EXPOSER);
+    public static class ServerProxy {
+        @SubscribeEvent
+        public void registerBlocks(RegistryEvent.Register<Block> event) {
+            event.getRegistry().register(EXPOSER);
+            event.getRegistry().register(PRODUCTION_EXPOSER);
 
-		}
+        }
 
-		@SubscribeEvent
-		public void registerItems(RegistryEvent.Register<Item> event) {
-			event.getRegistry().register(EXPOSER_ITEM);
-		}
+        @SubscribeEvent
+        public void registerItems(RegistryEvent.Register<Item> event) {
+            event.getRegistry().register(EXPOSER_ITEM);
+            event.getRegistry().register(PRODUCTION_EXPOSER_ITEM);
+        }
 
-		public void preInit(FMLPreInitializationEvent event) {
-			GameRegistry.registerTileEntity(TileExposer.class, new ResourceLocation(MODID, "exposer"));
-		}
-	}
+        public void preInit(FMLPreInitializationEvent event) {
+            GameRegistry.registerTileEntity(TileExposer.class, new ResourceLocation(MODID, "exposer"));
+            GameRegistry.registerTileEntity(ProductionExposerTile.class, new ResourceLocation(MODID, "production_exposer"));
+        }
+    }
 
-	public static class ClientProxy extends ServerProxy {
-		@Override
-		public void preInit(FMLPreInitializationEvent event) {
-			super.preInit(event);
-			ModelResourceLocation itemModelResourceLocation = new ModelResourceLocation("appliedmetrics2:exposer",
-					"inventory");
-			ModelLoader.setCustomModelResourceLocation(EXPOSER_ITEM, 0, itemModelResourceLocation);
-		}
-	}
+    public static class ClientProxy extends ServerProxy {
+        @Override
+        public void preInit(FMLPreInitializationEvent event) {
+            super.preInit(event);
+            ModelResourceLocation itemModelResourceLocation = new ModelResourceLocation("appliedmetrics2:exposer",
+                                                                                        "inventory");
+            ModelLoader.setCustomModelResourceLocation(EXPOSER_ITEM, 0, itemModelResourceLocation);
 
-	@SidedProxy
-	public static ServerProxy proxy;
+            itemModelResourceLocation = new ModelResourceLocation("appliedmetrics2:production_exposer",
+                                                                  "inventory");
+            ModelLoader.setCustomModelResourceLocation(PRODUCTION_EXPOSER_ITEM, 0, itemModelResourceLocation);
+        }
+    }
 
-	public static final String MODID = "appliedmetrics2";
-	public static final String NAME = "Applied MEtrics 2";
-	public static final String VERSION = "1.0.0";
+    @SidedProxy
+    public static ServerProxy proxy;
 
-	public static final Block EXPOSER = new BlockExposer();
-	public static final Item EXPOSER_ITEM = new ItemBlock(EXPOSER).setRegistryName(MODID, "exposer");
+    public static final String MODID = "appliedmetrics2";
+    public static final String NAME = "Applied MEtrics 2";
+    public static final String VERSION = "1.1.0";
+    public static final Logger LOGGER = LogManager.getLogger(MODID);
 
-	@EventHandler
-	public void preInit(FMLPreInitializationEvent event) {
-		MinecraftForge.EVENT_BUS.register(proxy);
-		proxy.preInit(event);
-	}
+    public static final Block EXPOSER = new BlockExposer();
+    public static final Item EXPOSER_ITEM = new ItemBlock(EXPOSER).setRegistryName(MODID, "exposer");
 
-	@EventHandler
-	public void init(FMLInitializationEvent event) {
-		if (event.getSide() == Side.SERVER) {
-			System.out.println("starting HTTP server");
-			JvmMetrics.builder().register();
+    public static final Block PRODUCTION_EXPOSER = new ProductionExposerBlock();
+    public static final Item PRODUCTION_EXPOSER_ITEM = new ItemBlock(PRODUCTION_EXPOSER).setRegistryName(MODID, "production_exposer");
 
-			try {
-				HTTPServer server = HTTPServer.builder().port(25564).buildAndStart();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-	}
+    public static HTTPServer SERVER;
 
+    @EventHandler
+    public void preInit(FMLPreInitializationEvent event) {
+        MinecraftForge.EVENT_BUS.register(proxy);
+        proxy.preInit(event);
+    }
+
+    @EventHandler
+    public void init(FMLInitializationEvent event) {
+        if (event.getSide() == Side.SERVER) {
+            System.out.println("Starting HTTP Server!");
+            LOGGER.info("Starting HTTP server");
+            JvmMetrics.builder().register();
+
+            try {
+                SERVER = HTTPServer.builder().port(25564).buildAndStart();
+            } catch (IOException e) {
+                LOGGER.error("HTTP server could not start. Metrics won't work!", e);
+            }
+        }
+    }
 }
