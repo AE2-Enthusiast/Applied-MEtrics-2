@@ -17,6 +17,7 @@ import io.prometheus.metrics.core.datapoints.GaugeDataPoint;
 import io.prometheus.metrics.core.metrics.Gauge;
 import io.prometheus.metrics.model.snapshots.Unit;
 import net.minecraft.item.Item;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fluids.Fluid;
 
 public class TileExposer extends AENetworkTile {
@@ -84,9 +85,9 @@ public class TileExposer extends AENetworkTile {
 					});
                                         ResourceLocation name = itemType.getRegistryName();
 					try {
-                                            return gauge.labelValues(name.getNamespace(), name.getPath(), String.valueOf(item.getMeta()), itemType.getTranslationKeyInefficiently(stack.createItemStack()));
+                                            return gauge.labelValues(name.getNamespace(), name.getPath(), String.valueOf(meta), itemType.getUnlocalizedNameInefficiently(stack.createItemStack()));
 					} catch (Exception e) {
-                                            return gauge.labelValues(name.getNamespace(), name.getPath(), String.valueOf(item.getMeta(), itemType.getTranslationKey());
+                                            return gauge.labelValues(name.getNamespace(), name.getPath(), String.valueOf(meta), itemType.getTranslationKey());
 					}
 				});
 
