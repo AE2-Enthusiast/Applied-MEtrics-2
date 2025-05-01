@@ -57,13 +57,10 @@ public class AM2 {
         @Override
         public void preInit(FMLPreInitializationEvent event) {
             super.preInit(event);
-            ModelResourceLocation itemModelResourceLocation = new ModelResourceLocation("appliedmetrics2:exposer",
-                                                                                        "inventory");
-            ModelLoader.setCustomModelResourceLocation(EXPOSER_ITEM, 0, itemModelResourceLocation);
-
-            itemModelResourceLocation = new ModelResourceLocation("appliedmetrics2:production_exposer",
-                                                                  "inventory");
-            ModelLoader.setCustomModelResourceLocation(PRODUCTION_EXPOSER_ITEM, 0, itemModelResourceLocation);
+            ModelLoader.setCustomModelResourceLocation(EXPOSER_ITEM, 0, new ModelResourceLocation("appliedmetrics2:exposer",
+                                                                                                  "inventory"));
+            ModelLoader.setCustomModelResourceLocation(PRODUCTION_EXPOSER_ITEM, 0, new ModelResourceLocation("appliedmetrics2:production_exposer",
+                                                                                                             "inventory"));
         }
     }
 
@@ -92,7 +89,6 @@ public class AM2 {
     @EventHandler
     public void init(FMLInitializationEvent event) {
         if (event.getSide() == Side.SERVER) {
-            System.out.println("Starting HTTP Server!");
             LOGGER.info("Starting HTTP server");
             JvmMetrics.builder().register();
 

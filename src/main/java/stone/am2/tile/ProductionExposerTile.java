@@ -30,7 +30,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.util.Constants.NBT;
 import stone.am2.AM2;
 
-public class ProductionExposerTile<T  extends IAEStack<T>> extends AENetworkTile {
+public class ProductionExposerTile extends AENetworkTile {
 
     public final Items ITEMS = new Items();
     public final Fluids FLUIDS = new Fluids();
@@ -38,6 +38,7 @@ public class ProductionExposerTile<T  extends IAEStack<T>> extends AENetworkTile
 
     @Override
     public void onReady() {
+        super.onReady();
         try {
             this.getProxy()
                 .getStorage()
@@ -57,8 +58,9 @@ public class ProductionExposerTile<T  extends IAEStack<T>> extends AENetworkTile
 
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound data) {
-        NBTTagCompound tags = data.getCompoundTag("am2");
-        tags.setTag("items", ITEMS.writeToNBT(new NBTTagCompound()));
+        super.writeToNBT(data);
+        NBTTagCompound tags = new NBTTagCompound();
+        tags.setTag("items", ITEMS.writeToNBT());
         tags.setTag("fluids", FLUIDS.writeToNBT(new NBTTagCompound()));
         data.setTag("am2", tags);
         return data;
@@ -82,7 +84,8 @@ public class ProductionExposerTile<T  extends IAEStack<T>> extends AENetworkTile
         @Override
         public boolean isValid(Object token) {
             // if we're not valid we're not even connected and not receiving this anyway
-            return true;
+            return ProductionExposerTile.this.getProxy().isReady();
+            // return true;
         }
 
         public void readFromNBT(NBTTagCompound data) {
@@ -90,7 +93,8 @@ public class ProductionExposerTile<T  extends IAEStack<T>> extends AENetworkTile
             fromList(data.getTagList("consumption", NBT.TAG_COMPOUND), false);
         }
 
-        public NBTTagCompound writeToNBT(NBTTagCompound data) {
+        public NBTTagCompound writeToNBT() {
+            NBTTagCompound data = new NBTTagCompound();
             data.setTag("production", toList(productionMap));
             data.setTag("consumption", toList(consumptionMap));
             return data;
@@ -121,6 +125,7 @@ public class ProductionExposerTile<T  extends IAEStack<T>> extends AENetworkTile
         }
 
 		private void handleStack(Item item, short meta, long count) {
+        AM2.LOGGER.info("Handling stack: " + new ItemStack(item, (int) Math.abs(count), meta));
         Reference2ReferenceMap<Item, Short2ReferenceMap<CounterDataPoint>> item2meta2counter = count > 0 ? productionMap : consumptionMap;
         Short2ReferenceMap<CounterDataPoint> meta2counter = item2meta2counter.computeIfAbsent(item, $ -> new Short2ReferenceAVLTreeMap<>());
         CounterDataPoint datapoint = meta2counter.computeIfAbsent(meta, $ -> {
@@ -147,6 +152,7 @@ public class ProductionExposerTile<T  extends IAEStack<T>> extends AENetworkTile
         // incremental change, stack size is negative for stacks taken from network
         @Override
         public void postChange(IBaseMonitor<IAEItemStack> monitor, Iterable<IAEItemStack> changes, IActionSource src) {
+            AM2.LOGGER.info("posting change");
             for (IAEItemStack stack : changes) {
                 if (stack.isMeaningful()) {
                     this.handleStack(stack.getItem(), (short) stack.getItemDamage(), stack.getStackSize());
