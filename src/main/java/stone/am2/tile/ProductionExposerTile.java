@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import appeng.api.AEApi;
+import appeng.api.networking.events.MENetworkBootingStatusChange;
+import appeng.api.networking.events.MENetworkEventSubscribe;
 import appeng.api.networking.security.IActionSource;
 import appeng.api.networking.storage.IBaseMonitor;
 import appeng.api.storage.IMEMonitorHandlerReceiver;
@@ -34,35 +36,62 @@ public class ProductionExposerTile extends AENetworkTile {
 
     public final Items ITEMS = new Items();
     public final Fluids FLUIDS = new Fluids();
-    private Map<String, Counter> gauges = new HashMap<>();
 
+    @MENetworkEventSubscribe
+    public void onNetworkBootingStatusChange(MENetworkBootingStatusChange event) {
+        if (this.getProxy().isActive()) {
+            System.out.println("active");
+            try {
+                this.getProxy()
+                    .getStorage()
+                    .getInventory(AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class))
+                    .addListener(ITEMS, this.getProxy().getGrid());
+            } catch (GridAccessException e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println("inactive");
+            try {
+                this.getProxy()
+                    .getStorage()
+                    .getInventory(AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class))
+                    .removeListener(ITEMS);
+            } catch (GridAccessException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    
     @Override
     public void onReady() {
         super.onReady();
-        try {
-            this.getProxy()
-                .getStorage()
-                .getInventory(AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class))
-                .addListener(ITEMS, null);
-        } catch (GridAccessException e) {
-            // :P
-        }
+        System.out.println("onReady");
+    }
+
+    @Override
+    public void gridChanged() {
+        super.gridChanged();
+        System.out.println("gridChanged");
     }
     @Override
     public void readFromNBT(NBTTagCompound data) {
         super.readFromNBT(data);
+        System.out.println("Reading from NBT");
+        System.out.println(data);
         NBTTagCompound tags = data.getCompoundTag("am2");
-        ITEMS.readFromNBT(tags);
-        FLUIDS.readFromNBT(tags);
+        ITEMS.readFromNBT(tags.getCompoundTag("items"));
+        FLUIDS.readFromNBT(tags.getCompoundTag("fluids"));
     }
 
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound data) {
         super.writeToNBT(data);
+        System.out.println("writing to NBT");
         NBTTagCompound tags = new NBTTagCompound();
         tags.setTag("items", ITEMS.writeToNBT());
         tags.setTag("fluids", FLUIDS.writeToNBT(new NBTTagCompound()));
         data.setTag("am2", tags);
+        System.out.println(data);
         return data;
     }
     
@@ -83,13 +112,15 @@ public class ProductionExposerTile extends AENetworkTile {
         private final Reference2ReferenceMap<Item, Short2ReferenceMap<CounterDataPoint>> consumptionMap = new Reference2ReferenceOpenHashMap<>();
         @Override
         public boolean isValid(Object token) {
-            // if we're not valid we're not even connected and not receiving this anyway
-            return ProductionExposerTile.this.getProxy().isReady();
+            System.out.println(ProductionExposerTile.this.getProxy().isActive());
+            return ProductionExposerTile.this.getProxy().isActive();
             // return true;
         }
 
         public void readFromNBT(NBTTagCompound data) {
+            productionCounter.clear();
             fromList(data.getTagList("production", NBT.TAG_COMPOUND), true);
+            consumptionCounter.clear();
             fromList(data.getTagList("consumption", NBT.TAG_COMPOUND), false);
         }
 
@@ -105,7 +136,7 @@ public class ProductionExposerTile extends AENetworkTile {
             for (var e : map.reference2ReferenceEntrySet()) {
                 for (var ee : e.getValue().short2ReferenceEntrySet()) {
                     NBTTagCompound stack = new NBTTagCompound();
-                    stack.setString("item", Item.REGISTRY.getNameForObject(e.getKey()).getNamespace());
+                    stack.setString("item", Item.REGISTRY.getNameForObject(e.getKey()).toString());
                     stack.setShort("meta", ee.getShortKey());
                     stack.setLong("count", ee.getValue().getLongValue());
                     list.appendTag(stack);
@@ -116,6 +147,7 @@ public class ProductionExposerTile extends AENetworkTile {
 
         private void fromList(NBTTagList list, boolean isProduction) {
             for (var $ : list) {
+                System.out.println($);
                 NBTTagCompound itemstack = (NBTTagCompound) $;
                 Item item = Item.getByNameOrId(itemstack.getString("item"));
                 short meta = itemstack.getShort("meta");
@@ -146,7 +178,7 @@ public class ProductionExposerTile extends AENetworkTile {
         // doesn't affect production so idc
         @Override
         public void onListUpdate() {
-            
+            System.out.println("onListUpdate");
         }
 
         // incremental change, stack size is negative for stacks taken from network
