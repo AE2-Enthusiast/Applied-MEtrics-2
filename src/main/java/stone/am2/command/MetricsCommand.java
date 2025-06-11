@@ -1,12 +1,12 @@
 package stone.am2.command;
 
-import appeng.fluids.util.AEFluidStack;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.item.Item;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.text.TextComponentString;
+import net.minecraftforge.fluids.Fluid;
 import stone.am2.data.ProductionSavedData;
 
 public class MetricsCommand extends CommandBase {
@@ -24,13 +24,16 @@ public class MetricsCommand extends CommandBase {
         this.currentProduction = ProductionSavedData.INSTANCE;
         this.isStopped = true;
         ProductionSavedData.INSTANCE = new ProductionSavedData() {
-
           @Override
           public void acceptItem(Item item, short meta, long count,
             boolean isProduction) {}
 
           @Override
-          public void acceptFluid(AEFluidStack stack) {}
+          public void acceptFluid(Fluid fluid, long count,
+            boolean isProduction) {
+            // TODO Auto-generated method stub
+            super.acceptFluid(fluid, count, isProduction);
+          }
         };
         sender.sendMessage(new TextComponentString("Paused metric gathering"));
         break;

@@ -1,6 +1,5 @@
 package stone.am2.data;
 
-import appeng.fluids.util.AEFluidStack;
 import io.prometheus.metrics.core.datapoints.CounterDataPoint;
 import io.prometheus.metrics.core.metrics.Counter;
 import io.prometheus.metrics.model.snapshots.Unit;
@@ -17,6 +16,8 @@ import net.minecraft.world.World;
 import net.minecraft.world.storage.MapStorage;
 import net.minecraft.world.storage.WorldSavedData;
 import net.minecraftforge.common.util.Constants.NBT;
+import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidRegistry;
 import stone.am2.AM2;
 
 public class ProductionSavedData extends WorldSavedData {
@@ -49,7 +50,7 @@ public class ProductionSavedData extends WorldSavedData {
     AM2.LOGGER.info("Writing to NBT @ {}!", this);
     NBTTagCompound tags = new NBTTagCompound();
     tags.setTag("items", ITEMS.writeToNBT());
-    tags.setTag("fluids", FLUIDS.writeToNBT(new NBTTagCompound()));
+    tags.setTag("fluids", FLUIDS.writeToNBT());
     data.setTag("am2", tags);
     AM2.LOGGER.info("Writing: {}", data);
     return data;
@@ -61,8 +62,8 @@ public class ProductionSavedData extends WorldSavedData {
     this.markDirty();
   }
 
-  public void acceptFluid(AEFluidStack stack) {
-
+  public void acceptFluid(Fluid fluid, long count, boolean isProduction) {
+    FLUIDS.handleStack(fluid, isProduction ? count : -count);
     this.markDirty();
   }
 
@@ -80,12 +81,12 @@ public class ProductionSavedData extends WorldSavedData {
 
   private class Items {
     private static final Counter productionCounter = Counter.builder()
-      .name("AE2_production")
+      .name("AE2_item_production")
       .help("The total number of items that have entered the system")
       .unit(new Unit("items")).labelNames("modid", "id", "meta", "unlocalized")
       .register();
     private static final Counter consumptionCounter = Counter.builder()
-      .name("AE2_consumption")
+      .name("AE2_item_consumption")
       .help("The total number of items that have left the system")
       .unit(new Unit("items")).labelNames("modid", "id", "meta", "unlocalized")
       .register();
@@ -156,24 +157,65 @@ public class ProductionSavedData extends WorldSavedData {
   }
 
   private class Fluids {
+    private static final Counter productionCounter = Counter.builder()
+      .name("AE2_fluid_production")
+      .help("The total number of items that have entered the system")
+      .unit(new Unit("millibuckets")).labelNames("id", "unlocalized")
+      .register();
+    private static final Counter consumptionCounter = Counter.builder()
+      .name("AE2_fluid_consumption")
+      .help("The total number of items that have left the system")
+      .unit(new Unit("millibuckets")).labelNames("id", "unlocalized")
+      .register();
+    private final Reference2ReferenceMap<Fluid, CounterDataPoint> productionMap = new Reference2ReferenceOpenHashMap<>();
+    private final Reference2ReferenceMap<Fluid, CounterDataPoint> consumptionMap = new Reference2ReferenceOpenHashMap<>();
+
     public void readFromNBT(NBTTagCompound data) {
-      // return data;
+      fromList(data.getTagList("production", NBT.TAG_COMPOUND), true);
+      fromList(data.getTagList("consumption", NBT.TAG_COMPOUND), false);
     }
 
-    public NBTTagCompound writeToNBT(NBTTagCompound data) {
+    public NBTTagCompound writeToNBT() {
+      NBTTagCompound data = new NBTTagCompound();
+      data.setTag("production", toList(productionMap));
+      data.setTag("consumption", toList(consumptionMap));
       return data;
     }
 
-  }
+    private NBTTagList toList(
+      Reference2ReferenceMap<Fluid, CounterDataPoint> map) {
+      NBTTagList list = new NBTTagList();
+      for (var e : map.reference2ReferenceEntrySet()) {
+        String id = e.getKey().getName();
+        NBTTagCompound stack = new NBTTagCompound();
+        stack.setString("fluid", id);
+        stack.setLong("count", e.getValue().getLongValue());
+        list.appendTag(stack);
+      }
+      return list;
+    }
 
-  public static class ProductionNullData extends ProductionSavedData {
+    private void fromList(NBTTagList list, boolean isProduction) {
+      for (var $ : list) {
+        NBTTagCompound stack = (NBTTagCompound) $;
+        Fluid fluid = FluidRegistry.getFluid(stack.getString("fluid"));
+        long count = stack.getLong("count");
+        handleStack(fluid, isProduction ? count : -count);
+      }
+    }
 
-    @Override
-    public void acceptItem(Item item, short meta, long count,
-      boolean isProduction) {}
-
-    @Override
-    public void acceptFluid(AEFluidStack stack) {}
-
+    private void handleStack(Fluid fluid, long count) {
+      AM2.LOGGER.info("Handling fluid stack: {} x{}", fluid.getName(), count);
+      Reference2ReferenceMap<Fluid, CounterDataPoint> fluid2counter = count > 0
+        ? productionMap
+        : consumptionMap;
+      CounterDataPoint datapoint = fluid2counter.computeIfAbsent(fluid, $ -> {
+        String translationKey = fluid.getUnlocalizedName();
+        String id = fluid.getName();
+        return (count > 0 ? productionCounter : consumptionCounter)
+          .labelValues(id, translationKey);
+      });
+      datapoint.inc(Math.abs(count));
+    }
   }
 }
