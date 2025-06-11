@@ -1,14 +1,12 @@
 [{
     "modid": "${modid}",
     "name": "${modname}",
-    "description": "A mod to send metrics about an ME system to an external server",
+    "description": "A mod to expose metrics about the ME system to an external Prometheus instance",
     "version": "${version}",
     "mcversion": "${mcversion}",
     "logoFile": "",
-    "url": "",
-    "authorList": [
-                  "stone"
-                  ],
+    "url": "https://github.com/AE2_Enthusiast/Applied-MEtrics2",
+    "authorList": ["AE2 Enthusiast"],
     "credits": "",
     "dependencies": []
 }]
