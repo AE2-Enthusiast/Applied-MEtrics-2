@@ -38,8 +38,6 @@ public class ProductionSavedData extends WorldSavedData {
 
   @Override
   public void readFromNBT(NBTTagCompound data) {
-    AM2.LOGGER.info("Reading from NBT @ {}!", this);
-    AM2.LOGGER.info("Reading: {}", data);
     NBTTagCompound tags = data.getCompoundTag("am2");
     ITEMS.readFromNBT(tags.getCompoundTag("items"));
     FLUIDS.readFromNBT(tags.getCompoundTag("fluids"));
@@ -47,12 +45,10 @@ public class ProductionSavedData extends WorldSavedData {
 
   @Override
   public NBTTagCompound writeToNBT(NBTTagCompound data) {
-    AM2.LOGGER.info("Writing to NBT @ {}!", this);
     NBTTagCompound tags = new NBTTagCompound();
     tags.setTag("items", ITEMS.writeToNBT());
     tags.setTag("fluids", FLUIDS.writeToNBT());
     data.setTag("am2", tags);
-    AM2.LOGGER.info("Writing: {}", data);
     return data;
   }
 
@@ -132,8 +128,6 @@ public class ProductionSavedData extends WorldSavedData {
     }
 
     private void handleStack(Item item, short meta, long count) {
-      AM2.LOGGER.info("Handling stack: {}{}", count < 0 ? '-' : "",
-        new ItemStack(item, (int) Math.abs(count), meta));
       Reference2ReferenceMap<Item, Short2ReferenceMap<CounterDataPoint>> item2meta2counter = count > 0
         ? productionMap
         : consumptionMap;
@@ -205,7 +199,6 @@ public class ProductionSavedData extends WorldSavedData {
     }
 
     private void handleStack(Fluid fluid, long count) {
-      AM2.LOGGER.info("Handling fluid stack: {} x{}", fluid.getName(), count);
       Reference2ReferenceMap<Fluid, CounterDataPoint> fluid2counter = count > 0
         ? productionMap
         : consumptionMap;
