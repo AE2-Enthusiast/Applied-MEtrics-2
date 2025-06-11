@@ -26,10 +26,8 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import stone.am2.block.BlockExposer;
-import stone.am2.block.ProductionExposerBlock;
 import stone.am2.command.MetricsCommand;
 import stone.am2.data.ProductionSavedData;
-import stone.am2.tile.ProductionExposerTile;
 import stone.am2.tile.TileExposer;
 
 @Mod(modid = AM2.MODID, name = AM2.NAME, version = AM2.VERSION, dependencies = "required:appliedenergistics2")
@@ -39,21 +37,17 @@ public class AM2 {
     @SubscribeEvent
     public void registerBlocks(RegistryEvent.Register<Block> event) {
       event.getRegistry().register(EXPOSER);
-      event.getRegistry().register(PRODUCTION_EXPOSER);
 
     }
 
     @SubscribeEvent
     public void registerItems(RegistryEvent.Register<Item> event) {
       event.getRegistry().register(EXPOSER_ITEM);
-      event.getRegistry().register(PRODUCTION_EXPOSER_ITEM);
     }
 
     public void preInit(FMLPreInitializationEvent event) {
       GameRegistry.registerTileEntity(TileExposer.class,
         new ResourceLocation(MODID, "exposer"));
-      GameRegistry.registerTileEntity(ProductionExposerTile.class,
-        new ResourceLocation(MODID, "production_exposer"));
     }
 
     @SubscribeEvent
@@ -76,9 +70,6 @@ public class AM2 {
       super.preInit(event);
       ModelLoader.setCustomModelResourceLocation(EXPOSER_ITEM, 0,
         new ModelResourceLocation("appliedmetrics2:exposer", "inventory"));
-      ModelLoader.setCustomModelResourceLocation(PRODUCTION_EXPOSER_ITEM, 0,
-        new ModelResourceLocation("appliedmetrics2:production_exposer",
-          "inventory"));
     }
   }
 
@@ -93,10 +84,6 @@ public class AM2 {
   public static final Block EXPOSER = new BlockExposer();
   public static final Item EXPOSER_ITEM = new ItemBlock(EXPOSER)
     .setRegistryName(MODID, "exposer");
-
-  public static final Block PRODUCTION_EXPOSER = new ProductionExposerBlock();
-  public static final Item PRODUCTION_EXPOSER_ITEM = new ItemBlock(
-    PRODUCTION_EXPOSER).setRegistryName(MODID, "production_exposer");
 
   public static HTTPServer SERVER;
 
